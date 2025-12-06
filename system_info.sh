@@ -236,26 +236,26 @@ monitor_bandwidth() {
 show_menu() {
     clear
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}    Linux System Information Tool       ${NC}"
+    echo -e "${BLUE}    Linux 系统信息工具箱                ${NC}"
     echo -e "${BLUE}========================================${NC}"
-    echo "1. View OS & Kernel Info"
-    echo "2. View CPU Info"
-    echo "3. View Memory Info"
-    echo "4. View Disk Info"
-    echo "5. View Uptime & Load"
-    echo "6. View Network Interfaces"
-    echo "7. View Network Connections"
-    echo "8. View Routing Table"
-    echo "9. Test Network Latency"
-    echo "10. Monitor Bandwidth (Real-time)"
-    echo "11. Generate Full Report (All Info)"
-    echo "0. Exit"
+    echo "1. 查看系统及内核信息 (OS & Kernel)"
+    echo "2. 查看 CPU 信息"
+    echo "3. 查看内存使用情况"
+    echo "4. 查看磁盘及挂载点"
+    echo "5. 查看系统运行时间及负载 (Uptime & Load)"
+    echo "6. 查看网络接口信息 (IP/MAC)"
+    echo "7. 查看当前网络连接 (Listening Ports)"
+    echo "8. 查看路由表"
+    echo "9. 测试网络延迟 (Ping Google DNS)"
+    echo "10. 实时带宽监控 (iftop/nload)"
+    echo "11. 生成完整系统报告"
+    echo "0. 退出"
     echo -e "${BLUE}========================================${NC}"
 }
 
 generate_full_report() {
-    echo -e "${GREEN}Generating full system report...${NC}"
-    log_message "--- START FULL REPORT ---"
+    echo -e "${GREEN}正在生成完整系统报告...${NC}"
+    log_message "--- 开始生成完整报告 ---"
     get_os_info
     get_cpu_info
     get_memory_info
@@ -265,9 +265,9 @@ generate_full_report() {
     get_network_connections
     get_routing_table
     get_network_latency
-    log_message "--- END FULL REPORT ---"
-    echo -e "${GREEN}Report saved to $LOG_FILE${NC}"
-    read -p "Press Enter to continue..."
+    log_message "--- 完整报告生成结束 ---"
+    echo -e "${GREEN}报告已保存至 $LOG_FILE${NC}"
+    read -p "按回车键继续..."
 }
 
 main() {
@@ -283,22 +283,22 @@ main() {
 
     while true; do
         show_menu
-        read -p "Enter your choice [0-11]: " choice
+        read -p "请输入选项 [0-11]: " choice
         
         case $choice in
-            1) get_os_info; read -p "Press Enter..." ;;
-            2) get_cpu_info; read -p "Press Enter..." ;;
-            3) get_memory_info; read -p "Press Enter..." ;;
-            4) get_disk_info; read -p "Press Enter..." ;;
-            5) get_uptime_load; read -p "Press Enter..." ;;
-            6) get_network_interfaces; read -p "Press Enter..." ;;
-            7) get_network_connections; read -p "Press Enter..." ;;
-            8) get_routing_table; read -p "Press Enter..." ;;
-            9) get_network_latency; read -p "Press Enter..." ;;
+            1) get_os_info; read -p "按回车键继续..." ;;
+            2) get_cpu_info; read -p "按回车键继续..." ;;
+            3) get_memory_info; read -p "按回车键继续..." ;;
+            4) get_disk_info; read -p "按回车键继续..." ;;
+            5) get_uptime_load; read -p "按回车键继续..." ;;
+            6) get_network_interfaces; read -p "按回车键继续..." ;;
+            7) get_network_connections; read -p "按回车键继续..." ;;
+            8) get_routing_table; read -p "按回车键继续..." ;;
+            9) get_network_latency; read -p "按回车键继续..." ;;
             10) monitor_bandwidth ;;
             11) generate_full_report ;;
-            0) echo "Exiting..."; exit 0 ;;
-            *) echo -e "${RED}Invalid choice. Please try again.${NC}"; sleep 1 ;;
+            0) echo "正在退出..."; exit 0 ;;
+            *) echo -e "${RED}无效选项，请重试。${NC}"; sleep 1 ;;
         esac
     done
 }
