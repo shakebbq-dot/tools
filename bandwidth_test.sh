@@ -175,32 +175,76 @@ run_iperf_test() {
     fi
     
     local json_output="${REPORT_DIR}/iperf_${mode}_${protocol}_${DATE_STR}.json"
+    local error_log="${REPORT_DIR}/iperf_error.log"
     
     print_info "正在启动 $mode 测试 ($protocol)..."
     print_info "持续时间: ${TEST_DURATION}秒, 并行流数: $PARALLEL_STREAMS"
     
-    # Construct iperf3 command
-    # -J: JSON output
-    # -t: time
-    # -P: parallel streams
-    # -p: port
+    local max_retries=3
+    local retry_delay=3
+    local success=0
     
-    local cmd="iperf3 -c $TARGET_HOST -p $TARGET_PORT -t $TEST_DURATION -P $PARALLEL_STREAMS -J"
+    # Port range to try (start with selected, then increment)
+    local start_port=$TARGET_PORT
+    local end_port=$((start_port + 9)) # Try up to 10 ports (e.g., 5201-5210)
     
-    if [ "$protocol" == "udp" ]; then
-        cmd="$cmd -u -b 0" # UDP, unlimited bandwidth target to test max
-    fi
+    for ((port=start_port; port<=end_port; port++)); do
+        # Reset retry count for each port
+        for ((try=1; try<=max_retries; try++)); do
+            local cmd="iperf3 -c $TARGET_HOST -p $port -t $TEST_DURATION -P $PARALLEL_STREAMS -J"
+            
+            if [ "$protocol" == "udp" ]; then
+                # Use a safer default for UDP (100M) instead of unlimited to avoid being blocked
+                # If user wants higher, they can modify script, but 100M is good for loss/jitter test
+                cmd="$cmd -u -b 100M" 
+            fi
+            
+            if [ -n "$reverse_flag" ]; then
+                cmd="$cmd $reverse_flag"
+            fi
+            
+            if [ $try -gt 1 ]; then
+                print_warning "尝试 #$try (端口 $port)..."
+            else
+                echo "正在尝试端口 $port: $cmd"
+            fi
+            
+            # Run command, capture stderr to log
+            eval "$cmd" > "$json_output" 2> "$error_log"
+            local exit_code=$?
+            
+            if [ $exit_code -eq 0 ]; then
+                # Double check if JSON is valid (sometimes iperf3 returns 0 but writes error to JSON)
+                local json_error=$(jq -r '.error' "$json_output" 2>/dev/null)
+                if [[ "$json_error" != "null" && -n "$json_error" ]]; then
+                     print_error "iPerf3 内部错误: $json_error"
+                     # Treat as failure, retry
+                else
+                    success=1
+                    break 2 # Break both loops
+                fi
+            else
+                # Check error log for "busy"
+                if grep -q "busy" "$error_log"; then
+                    print_warning "服务器正忙 (端口 $port)，等待 ${retry_delay} 秒后重试..."
+                    sleep $retry_delay
+                elif grep -q "Connection refused" "$error_log"; then
+                    print_warning "端口 $port 连接被拒绝，尝试下一个端口..."
+                    break # Try next port immediately
+                else
+                    # Other errors
+                    local err_msg=$(cat "$error_log")
+                    print_warning "测试出错: $err_msg"
+                    sleep $retry_delay
+                fi
+            fi
+        done
+    done
     
-    if [ -n "$reverse_flag" ]; then
-        cmd="$cmd $reverse_flag"
-    fi
-    
-    # Execute and save JSON
-    echo "正在运行: $cmd"
-    eval "$cmd" > "$json_output"
-    
-    if [ $? -ne 0 ]; then
-        print_error "测试失败。请检查服务器连接或防火墙设置。"
+    if [ $success -eq 0 ]; then
+        print_error "测试最终失败。所有尝试均未成功。"
+        print_error "最后一次错误信息:"
+        cat "$error_log"
         rm -f "$json_output"
         return 1
     fi
