@@ -31,10 +31,13 @@ NC='\033[0m' # No Color
 # --- Public iperf3 Servers List (Fallbacks) ---
 # Note: These are common public servers, availability may vary.
 declare -A PUBLIC_SERVERS
-PUBLIC_SERVERS["Ping.online (欧洲)"]="ping.online"
-PUBLIC_SERVERS["Bouygues Telecom (法国)"]="bouygues.iperf.fr"
-PUBLIC_SERVERS["Scott Linux (美国)"]="iperf.scottlinux.com"
-PUBLIC_SERVERS["He.net (美国)"]="iperf.he.net"
+PUBLIC_SERVERS["Ping.online (法国)"]="ping.online.net"
+PUBLIC_SERVERS["Bouygues Telecom (法国)"]="lyo.bbr.iperf.bytel.fr"
+PUBLIC_SERVERS["Clouvider (英国-伦敦)"]="lon.speedtest.clouvider.net"
+PUBLIC_SERVERS["Clouvider (美国-洛杉矶)"]="la.speedtest.clouvider.net"
+PUBLIC_SERVERS["Clouvider (美国-纽约)"]="nyc.speedtest.clouvider.net"
+PUBLIC_SERVERS["Clouvider (荷兰-阿姆斯特丹)"]="ams.speedtest.clouvider.net"
+PUBLIC_SERVERS["Leaseweb (德国-法兰克福)"]="speedtest.fra1.de.leaseweb.net"
 
 # --- Helper Functions ---
 
