@@ -120,6 +120,19 @@ startbbrplus(){
 	echo -e "${Info}BBRplus启动成功！"
 }
 
+startbbrv3(){
+	remove_all
+	if [[ `echo ${kernel_version} | awk -F'.' '{print $1}'` -ge "5" ]]; then
+		echo "net.core.default_qdisc=cake" >> /etc/sysctl.conf
+	else
+		echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+	fi
+	echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+	echo "net.ipv4.tcp_ecn=1" >> /etc/sysctl.conf
+	sysctl -p
+	echo -e "${Info}BBRv3启动成功！"
+}
+
 #编译并启用BBR魔改
 startbbrmod(){
 	remove_all
@@ -221,6 +234,7 @@ remove_all(){
 	rm -rf bbrmod
 	sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
   sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+  sed -i '/net.ipv4.tcp_ecn/d' /etc/sysctl.conf
   sed -i '/fs.file-max/d' /etc/sysctl.conf
 	sed -i '/net.core.rmem_default/d' /etc/sysctl.conf
 	sed -i '/net.core.wmem_default/d' /etc/sysctl.conf
@@ -339,6 +353,7 @@ echo && echo -e " TCP加速 一键安装管理脚本 ${Red_font_prefix}[v${sh_ve
  ${Green_font_prefix}6.${Font_color_suffix} 使用暴力BBR魔改版加速(不支持部分系统)
  ${Green_font_prefix}7.${Font_color_suffix} 使用BBRplus版加速
  ${Green_font_prefix}8.${Font_color_suffix} 使用Lotserver(锐速)加速
+ ${Green_font_prefix}12.${Font_color_suffix} 使用BBRv3加速
 ————————————杂项管理————————————
  ${Green_font_prefix}9.${Font_color_suffix} 卸载全部加速
  ${Green_font_prefix}10.${Font_color_suffix} 系统配置优化
@@ -353,7 +368,7 @@ echo && echo -e " TCP加速 一键安装管理脚本 ${Red_font_prefix}[v${sh_ve
 		
 	fi
 echo
-read -p " 请输入数字 [0-11]:" num
+read -p " 请输入数字 [0-12]:" num
 case "$num" in
 	0)
 	Update_Shell
@@ -382,6 +397,9 @@ case "$num" in
 	8)
 	startlotserver
 	;;
+	12)
+	startbbrv3
+	;;
 	9)
 	remove_all
 	;;
@@ -393,7 +411,7 @@ case "$num" in
 	;;
 	*)
 	clear
-	echo -e "${Error}:请输入正确数字 [0-11]"
+    echo -e "${Error}:请输入正确数字 [0-12]"
 	sleep 5s
 	start_menu
 	;;
@@ -502,6 +520,11 @@ simulate_startbbrplus(){
     echo "执行: remove_all"
     echo "执行: 写入 net.core.default_qdisc=fq 与 net.ipv4.tcp_congestion_control=bbrplus 并 sysctl -p"
 }
+simulate_startbbrv3(){
+    echo "使用BBRv3加速"
+    echo "执行: remove_all"
+    echo "执行: 写入 net.core.default_qdisc=(cake|fq)、net.ipv4.tcp_congestion_control=bbr、net.ipv4.tcp_ecn=1 并 sysctl -p"
+}
 simulate_startbbrmod(){
     echo "使用BBR魔改版加速"
     echo "执行: 安装工具链并编译加载 tcp_tsunami.ko"
@@ -553,6 +576,7 @@ dry_run_main(){
     simulate_installlot
     simulate_startbbr
     simulate_startbbrplus
+    simulate_startbbrv3
     simulate_startbbrmod
     simulate_startbbrmod_nanqinlang
     simulate_startlotserver
@@ -729,7 +753,12 @@ check_status(){
 		if [[ ${run_status} == "bbr" ]]; then
 			run_status=`lsmod | grep "bbr" | awk '{print $1}'`
 			if [[ ${run_status} == "tcp_bbr" ]]; then
-				run_status="BBR启动成功"
+				ecn_val=`sysctl net.ipv4.tcp_ecn 2>/dev/null | awk -F "=" '{gsub("^[ \t]+|[ \t]+$", "", $2);print $2}'`
+				if [[ ${ecn_val} == "1" ]]; then
+					run_status="BBRv3启动成功"
+				else
+					run_status="BBR启动成功"
+				fi
 			else 
 				run_status="BBR启动失败"
 			fi
